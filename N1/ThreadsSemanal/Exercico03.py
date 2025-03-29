@@ -4,12 +4,16 @@ from tkinter import Tk, filedialog
 import threading
 import queue
 
+#Este valor do tipo Queue guarda a posição da imagem para que as threads possam usar.
+image_x_positions = queue.Queue()
 
-def converter_coluna(coluna, altura, imagem_original, imagem_final):
+def converter_coluna(altura, imagem_original, imagem_final):
+    coluna = image_x_positions.get()    #Pega uma coluna esperando a ser trabalhada na queue.
     for linha in range(altura):
         r, g, b = imagem_original.getpixel((coluna, linha))
         luminancia = int(0.299 * r + 0.587 * g + 0.114 * b)
-        imagem_final.putpixel((coluna, linha), luminancia)
+        imagem_final.putpixel((coluna, linha), luminancia)  #Avisa que o trabalho foi concluído na coluna.
+    image_x_positions.task_done()
 
 def converter_para_preto_e_branco_manual():
 
@@ -31,15 +35,13 @@ def converter_para_preto_e_branco_manual():
         largura, altura = imagem.size
         imagem_preto_branco = Image.new("L", (largura, altura))
 
-        # Itera sobre cada pixel da imagem
-
+        # Itera sobre cada píxel da imagem
         for x in range(largura):
-            thread = threading.Thread(target = converter_coluna, args = [coluna, altura, imagem_original, imagem_final])
-            for y in range(altura):
-                r, g, b = imagem.getpixel((x, y))
-                luminancia = int(0.299 * r + 0.587 * g + 0.114 * b)
-                imagem_preto_branco.putpixel((x, y), luminancia)
+            #Aki é inserido a coluna da imagem a ser trabalhada nas threads e cria uma thread para realizar o trabalho.
+            image_x_positions.put(x)
+            threading.Thread(target = converter_coluna, args = [altura, imagem, imagem_preto_branco]).start()
 
+        image_x_positions.join() #Espera que todos os elementos da Queue fiquem prontos.
         caminho_saida = filedialog.asksaveasfilename(
             title="Salvar imagem em preto e branco",
             defaultextension=".jpg",
