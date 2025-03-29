@@ -1,6 +1,16 @@
 from PIL import Image
 from tkinter import Tk, filedialog
 
+import threading
+import queue
+
+
+def converter_coluna(coluna, altura, imagem_original, imagem_final):
+    for linha in range(altura):
+        r, g, b = imagem_original.getpixel((coluna, linha))
+        luminancia = int(0.299 * r + 0.587 * g + 0.114 * b)
+        imagem_final.putpixel((coluna, linha), luminancia)
+
 def converter_para_preto_e_branco_manual():
 
     try:
@@ -24,6 +34,7 @@ def converter_para_preto_e_branco_manual():
         # Itera sobre cada pixel da imagem
 
         for x in range(largura):
+            thread = threading.Thread(target = converter_coluna, args = [coluna, altura, imagem_original, imagem_final])
             for y in range(altura):
                 r, g, b = imagem.getpixel((x, y))
                 luminancia = int(0.299 * r + 0.587 * g + 0.114 * b)
